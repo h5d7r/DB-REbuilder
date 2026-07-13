@@ -14,7 +14,7 @@ typedef struct notify_request {
 } notify_request_t;
 
 int sceKernelSendNotificationRequest(int, notify_request_t*, size_t, int);
-long syscall(long number, ...);
+int syscall(int number, ...);
 
 void send_notification(const char* message)
 {
