@@ -14,6 +14,7 @@ typedef struct notify_request {
 } notify_request_t;
 
 int sceKernelSendNotificationRequest(int, notify_request_t*, size_t, int);
+long syscall(long number, ...);
 
 void send_notification(const char* message)
 {
@@ -28,6 +29,66 @@ void send_notification(const char* message)
 #define APP_COPYRIGHT   "(c) 4GAMER"
 #define DATA_DIR        "/data/DB-Rebuilder"
 #define LOG_PATH        DATA_DIR "/DB-Rebuilder.log"
+#define BROWSER_URI     "about:blank"
+
+static int load_module(const char* name, int* module_id)
+{
+    return syscall(594, name, 0, module_id, 0);
+}
+
+static int resolve_symbol(int module_id, const char* name, void* destination)
+{
+    return syscall(591, module_id, name, destination);
+}
+
+static void open_browser_briefly(void)
+{
+    static int (*launch_web_browser)(const char*, void*);
+    static int (*get_mini_app_id)(void);
+    static int (*kill_app)(int, int, int, int);
+    int lib_system_service;
+    int browser_app_id;
+    int launch_ret;
+
+    if (load_module("libSceSystemService.sprx", &lib_system_service) != 0)
+    {
+        LOG("Failed to load libSceSystemService");
+        return;
+    }
+
+    /* Resolve system service functions at runtime to keep the payload self-contained. */
+    if (resolve_symbol(lib_system_service, "sceSystemServiceLaunchWebBrowser", &launch_web_browser) != 0 ||
+        resolve_symbol(lib_system_service, "sceSystemServiceGetAppIdOfMiniApp", &get_mini_app_id) != 0 ||
+        resolve_symbol(lib_system_service, "sceSystemServiceKillApp", &kill_app) != 0)
+    {
+        LOG("Failed to resolve browser control functions");
+        return;
+    }
+
+    launch_ret = launch_web_browser(BROWSER_URI, NULL);
+    if (launch_ret < 0)
+    {
+        LOG("Failed to open browser: 0x%08X", launch_ret);
+        return;
+    }
+
+    sleep(3);
+
+    browser_app_id = get_mini_app_id();
+    if ((browser_app_id & ~0xFFFFFF) != 0x60000000)
+    {
+        LOG("Browser app id unavailable: 0x%08X", browser_app_id);
+        return;
+    }
+
+    if (kill_app(browser_app_id, -1, 0, 0) < 0)
+    {
+        LOG("Failed to close browser app: 0x%08X", browser_app_id);
+        return;
+    }
+
+    LOG("Browser opened for 3 seconds and closed");
+}
 
 #ifdef BUILD_INSTALLER
 #include "payload_elf.h"
@@ -75,6 +136,7 @@ static int install_payload(void)
 int main(void)
 {
     int ret = 0;
+    int db_rebuild_ok = 1;
 
     if (mkdirs(LOG_PATH) != SUCCESS)
     {
@@ -100,6 +162,7 @@ int main(void)
     if (!appdb_rebuild(APP_DB_PATH))
     {
         LOG("app.db rebuild failed");
+        db_rebuild_ok = 0;
         ret = 1;
     }
     else
@@ -111,6 +174,7 @@ int main(void)
     if (!addcont_dlc_rebuild(ADDCONT_DB_PATH))
     {
         LOG("addcont.db rebuild failed");
+        db_rebuild_ok = 0;
         ret = 1;
     }
     else
@@ -127,7 +191,6 @@ int main(void)
 #endif
 
     LOG("Done.");
-    log_fini();
 
     char done_msg[256];
     snprintf(done_msg, sizeof(done_msg), "%s v%s %s\n%s",
@@ -135,5 +198,9 @@ int main(void)
              (ret == 0) ? "Database rebuilt successfully." : "Database rebuilt with errors.");
     send_notification(done_msg);
 
+    if (db_rebuild_ok)
+        open_browser_briefly();
+
+    log_fini();
     return ret;
 }
