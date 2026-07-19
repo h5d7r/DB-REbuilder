@@ -32,23 +32,66 @@ INSTALLER_OBJS := $(OBJS:$(BUILDDIR)/main.o=$(INSTALLER_MAIN_OBJ))
 PAYLOAD_BIN := $(BUILDDIR)/payload_normal_elf
 PAYLOAD_OBJ := $(BUILDDIR)/payload_elf.o
 
-COMMON_CFLAGS := -O2 -std=c11 -DPLATFORM_PS4=1 -I$(SRCDIR) \
+COMMON_CFLAGS := -Os -std=c11 -DPLATFORM_PS4=1 -I$(SRCDIR) \
                  -ffunction-sections -fdata-sections \
                  -fno-asynchronous-unwind-tables \
+                 -DNDEBUG \
                  -DPAYLOAD_VERSION=\"$(VERSION)\" \
-                 -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
-                 -DSQLITE_OMIT_DEPRECATED \
-                 -DSQLITE_OMIT_PROGRESS_CALLBACK \
-                 -DSQLITE_OMIT_SHARED_CACHE \
-                 -DSQLITE_OMIT_TCL_VARIABLE \
+                 -DSQLITE_THREADSAFE=0 \
+                 -DSQLITE_DEFAULT_MEMSTATUS=0 \
+                 -DSQLITE_OMIT_ALTERTABLE \
+                 -DSQLITE_OMIT_ANALYZE \
+                 -DSQLITE_OMIT_ATTACH \
                  -DSQLITE_OMIT_AUTHORIZATION \
+                 -DSQLITE_OMIT_AUTOINCREMENT \
+                 -DSQLITE_OMIT_AUTOVACUUM \
+                 -DSQLITE_OMIT_BETWEEN_OPTIMIZATION \
+                 -DSQLITE_OMIT_BLOB_LITERAL \
+                 -DSQLITE_OMIT_CAST \
+                 -DSQLITE_OMIT_CHECK \
                  -DSQLITE_OMIT_COMPLETE \
+                 -DSQLITE_OMIT_COMPOUND_SELECT \
+                 -DSQLITE_OMIT_CTE \
+                 -DSQLITE_OMIT_DECLTYPE \
+                 -DSQLITE_OMIT_DEPRECATED \
+                 -DSQLITE_OMIT_DESERIALIZE \
+                 -DSQLITE_OMIT_EXPLAIN \
+                 -DSQLITE_OMIT_FLOATING_POINT \
+                 -DSQLITE_OMIT_FOREIGN_KEY \
                  -DSQLITE_OMIT_GET_TABLE \
-                 -DSQLITE_OMIT_INCRBLOB
+                 -DSQLITE_OMIT_HEX_INTEGER \
+                 -DSQLITE_OMIT_INCRBLOB \
+                 -DSQLITE_OMIT_INTEGRITY_CHECK \
+                 -DSQLITE_OMIT_LIKE_OPTIMIZATION \
+                 -DSQLITE_OMIT_LOAD_EXTENSION \
+                 -DSQLITE_OMIT_LOCALTIME \
+                 -DSQLITE_OMIT_LOOKASIDE \
+                 -DSQLITE_OMIT_MEMORYDB \
+                 -DSQLITE_OMIT_OR_OPTIMIZATION \
+                 -DSQLITE_OMIT_PAGER_PRAGMAS \
+                 -DSQLITE_OMIT_PROGRESS_CALLBACK \
+                 -DSQLITE_OMIT_QUICKBALANCE \
+                 -DSQLITE_OMIT_REINDEX \
+                 -DSQLITE_OMIT_SCHEMA_PRAGMAS \
+                 -DSQLITE_OMIT_SCHEMA_VERSION_PRAGMAS \
+                 -DSQLITE_OMIT_SHARED_CACHE \
+                 -DSQLITE_OMIT_SUBQUERY \
+                 -DSQLITE_OMIT_TCL_VARIABLE \
+                 -DSQLITE_OMIT_TEMPDB \
+                 -DSQLITE_OMIT_TRACE \
+                 -DSQLITE_OMIT_TRIGGER \
+                 -DSQLITE_OMIT_TRUNCATE_OPTIMIZATION \
+                 -DSQLITE_OMIT_UTF16 \
+                 -DSQLITE_OMIT_VACUUM \
+                 -DSQLITE_OMIT_VIEW \
+                 -DSQLITE_OMIT_VIRTUALTABLE \
+                 -DSQLITE_OMIT_WAL \
+                 -DSQLITE_OMIT_WINDOWFUNC \
+                 -DSQLITE_OMIT_XFER_OPT
 
 CFLAGS := -Wall -Wextra -Werror $(COMMON_CFLAGS)
 
-SQLITE_CFLAGS := -w $(COMMON_CFLAGS) -Os
+SQLITE_CFLAGS := -w $(COMMON_CFLAGS)
 
 LDLIBS := -lc -lkernel
 
