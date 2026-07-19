@@ -55,9 +55,8 @@ COMMON_CFLAGS := -Os -std=c11 -DPLATFORM_PS4=1 -I$(SRCDIR) \
                  -DSQLITE_OMIT_DECLTYPE \
                  -DSQLITE_OMIT_DEPRECATED \
                  -DSQLITE_OMIT_DESERIALIZE \
-                 -DSQLITE_OMIT_EXPLAIN \
-                 -DSQLITE_OMIT_FLOATING_POINT \
-                 -DSQLITE_OMIT_FOREIGN_KEY \
+                  -DSQLITE_OMIT_EXPLAIN \
+                  -DSQLITE_OMIT_FOREIGN_KEY \
                  -DSQLITE_OMIT_GET_TABLE \
                  -DSQLITE_OMIT_HEX_INTEGER \
                  -DSQLITE_OMIT_INCRBLOB \
