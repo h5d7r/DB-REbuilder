@@ -8,11 +8,13 @@ on:
       - "**/*.c"
       - "**/*.h"
       - "Makefile"
+      - "tools/deflate.py"
   pull_request:
     paths:
       - "**/*.c"
       - "**/*.h"
       - "Makefile"
+      - "tools/deflate.py"
   workflow_dispatch:
 
 env:
