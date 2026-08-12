@@ -64,7 +64,6 @@ COMMON_CFLAGS := -Os -std=c11 -DPLATFORM_PS4=1 -I$(SRCDIR) \
                  -DSQLITE_OMIT_CHECK \
                  -DSQLITE_OMIT_COMPILEOPTION_DIAGS \
                  -DSQLITE_OMIT_COMPOUND_SELECT \
-                 -DSQLITE_OMIT_CTE \
                  -DSQLITE_OMIT_DATETIME_FUNCS \
                  -DSQLITE_OMIT_DECLTYPE \
                  -DSQLITE_OMIT_DESERIALIZE \
@@ -82,11 +81,9 @@ COMMON_CFLAGS := -Os -std=c11 -DPLATFORM_PS4=1 -I$(SRCDIR) \
                  -DSQLITE_OMIT_SUBQUERY \
                  -DSQLITE_OMIT_TEMPDB \
                  -DSQLITE_OMIT_TRACE \
-                 -DSQLITE_OMIT_TRIGGER \
                  -DSQLITE_OMIT_VACUUM \
                  -DSQLITE_OMIT_VIEW \
                  -DSQLITE_OMIT_VIRTUALTABLE \
-                 -DSQLITE_OMIT_WINDOWFUNC \
                  -DSQLITE_OMIT_AUTOINIT \
                  -DSQLITE_DEFAULT_MEMSTATUS=0
 
