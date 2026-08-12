@@ -4,12 +4,14 @@
 ** Based on bootstrap-bin.c from elfldr by John Törnblom.
 ** See https://github.com/ps4-payload-dev/elfldr/blob/master/bootstrap-bin.c and the GNU GPL v3 license.
 **
-** This tiny loader is embedded at the start of a raw .bin payload.  It maps
-** an RWX region, copies the embedded db-rebuilder ELF image into it, applies
-** R_X86_64_RELATIVE relocations, and jumps to the ELF entry point.
+** This tiny loader is embedded at the start of a raw .bin payload.  It
+** inflates the embedded, raw-DEFLATE compressed db-rebuilder ELF image into
+** an anonymous mapping, maps an RWX region, copies the ELF image into it,
+** applies R_X86_64_RELATIVE relocations, and jumps to the ELF entry point.
 */
 
 #include "db_rebuilder_elf.c"
+#include "puff.h"
 
 #define MAP_PRIVATE 0x0002
 #define MAP_ANONYMOUS 0x1000
@@ -121,6 +123,33 @@ mmap(void *addr, unsigned long len, int prot, int flags, int fd,
 static inline int
 munmap(void *addr, unsigned long len) {
   return (int)__syscall(73, addr, len);
+}
+
+/*
+** Inflate the embedded payload ELF into a fresh anonymous mapping.
+** Returns a pointer to the decompressed ELF image, or 0 on failure.
+*/
+static unsigned char *
+payload_inflate(void) {
+  unsigned long dst_len = DB_REBUILDER_ELF_RAW_SIZE;
+  unsigned long src_len = db_rebuilder_elf_len;
+  unsigned long map_len = ROUND_PG(dst_len);
+  unsigned char *raw;
+
+  raw = mmap(0, map_len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+             -1, 0);
+  if (raw == MAP_FAILED) {
+    return 0;
+  }
+
+  if (puff(raw, &dst_len, db_rebuilder_elf, &src_len) != 0
+      || dst_len != DB_REBUILDER_ELF_RAW_SIZE
+      || src_len != db_rebuilder_elf_len) {
+    munmap(raw, map_len);
+    return 0;
+  }
+
+  return raw;
 }
 
 static void
@@ -256,7 +285,13 @@ send_notification(const char *message) {
 int
 main(void) {
   const char *dst = "/data/payloads/db-rebuilder-v" PAYLOAD_VERSION ".elf";
+  unsigned char *elf;
   int fd;
+
+  elf = payload_inflate();
+  if (!elf) {
+    return 1;
+  }
 
   sys_mkdir("/data/payloads", 0777);
 
@@ -265,8 +300,8 @@ main(void) {
     return 1;
   }
 
-  if (sys_write(fd, db_rebuilder_elf, db_rebuilder_elf_len)
-      != (long)db_rebuilder_elf_len) {
+  if (sys_write(fd, elf, DB_REBUILDER_ELF_RAW_SIZE)
+      != (long)DB_REBUILDER_ELF_RAW_SIZE) {
     sys_close(fd);
     return 1;
   }
@@ -277,7 +312,8 @@ main(void) {
   send_notification("DB-Rebuilder v" PAYLOAD_VERSION
                     " Payload installed to /data/payloads/.");
 
-  payload_exec(db_rebuilder_elf);
+  payload_exec(elf);
+  munmap(elf, ROUND_PG(DB_REBUILDER_ELF_RAW_SIZE));
   return 0;
 }
 
@@ -285,7 +321,13 @@ main(void) {
 
 int
 _start(void) {
-  payload_exec(db_rebuilder_elf);
+  unsigned char *elf = payload_inflate();
+  if (!elf) {
+    return 1;
+  }
+
+  payload_exec(elf);
+  munmap(elf, ROUND_PG(DB_REBUILDER_ELF_RAW_SIZE));
   return 0;
 }
 
